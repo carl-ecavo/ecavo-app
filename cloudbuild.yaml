@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/ecavo', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/ecavo']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: [
+      'run', 'deploy', 'ecavo',
+      '--image', 'gcr.io/$PROJECT_ID/ecavo',
+      '--region', 'europe-west1',
+      '--allow-unauthenticated'
+    ]
+images:
+  - 'gcr.io/$PROJECT_ID/ecavo'
