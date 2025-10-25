@@ -13,3 +13,6 @@ steps:
     ]
 images:
   - 'gcr.io/$PROJECT_ID/ecavo'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
