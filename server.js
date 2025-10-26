@@ -1,58 +1,62 @@
+cat > server.js <<'EOF'
 import http from "node:http";
-import { Client } from 'pg';
+import url from "node:url";
+import { Pool } from "pg";
 
-// New client configuration in server.js
-// Final, definitive format for Cloud Run deployment
-
-// --- CONNECTION CONFIGURATION ---
-const DB_USER = 'ecavo_app'; 
-const DB_PASSWORD = process.env.DB_PASS; 
-// const DB_NAME = 'postgres';
-// Final Fix: Connect to the template database first to establish the socket connection.
-const DB_NAME = 'template1';
-
-// Cloud SQL Proxy maps the database to a local port. 
-// Set host to 127.0.0.1 and port to 5432 (default PostgreSQL port).
-const DB_HOST = '127.0.0.1'; // <-- Simple, reliable localhost binding
-const DB_PORT = 5432; 
-
-// This variable MUST be set at deploy time for the proxy to know which instance to connect to.
-const CLOUDSQL_CONNECTION_NAME = process.env.DB_CONNECTION_NAME; 
-
+// --- ENV ---
 const PORT = process.env.PORT || 8080;
+// Use your existing Secret for password and env vars for the rest:
+const DB_USER = process.env.DB_USER || "ecavo_app";
+const DB_PASS = process.env.DB_PASS; // from Secret Manager
+const DB_NAME = process.env.DB_NAME || "template1"; // change to your real DB later
+const INSTANCE_CONNECTION_NAME = process.env.INSTANCE_CONNECTION_NAME; // ecavo-prod:europe-west1:ecavo-db-prod
 
-// 2. Configure the PostgreSQL client
-const client = new Client({
+// --- Postgres pool via Cloud SQL Unix socket ---
+const pool = new Pool({
   user: DB_USER,
-  password: DB_PASSWORD,
+  password: DB_PASS,
   database: DB_NAME,
-  host: DB_HOST, 
-  port: DB_PORT,
+  host: `/cloudsql/${INSTANCE_CONNECTION_NAME}`,
+  ssl: false,
   connectionTimeoutMillis: 5000,
-});
-// --------------------------------
-
-// Connect to the database on startup (or implement robust connection pooling for production)
-client.connect()
-  .then(() => console.log('Successfully connected to Cloud SQL database!'))
-  .catch(err => console.error('Connection error: Failed to connect to database using socket path.', err.stack));
-
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "content-type": "text/plain" });
-  
-  // Example query: check the current time in the database
-  client.query('SELECT NOW()')
-    .then(dbRes => {
-      const dbTime = dbRes.rows[0].now;
-      res.end(`Hello from Ecavo! CI/CD is LIVE!\nDatabase Time: ${dbTime}`);
-    })
-    .catch(err => {
-      console.error('Query error:', err.stack);
-      res.end(`Hello from Ecavo! CI/CD is LIVE!\nDatabase connection FAILED. Check logs for query error.`);
-    });
+  idleTimeoutMillis: 10000,
+  max: 5,
 });
 
-server.listen(PORT, '0.0.0.0', () => { // <--- ADDED '0.0.0.0'
-  console.log(`Server listening on port ${PORT} at 0.0.0.0`);
+// Simple router
+const server = http.createServer(async (req, res) => {
+  const path = url.parse(req.url).pathname || "/";
+
+  if (path === "/healthz") {
+    res.writeHead(200, { "content-type": "text/plain" });
+    res.end("ok");
+    return;
+  }
+
+  if (path === "/dbcheck") {
+    try {
+      const r = await pool.query("SELECT 1 as ok");
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ ok: r.rows?.[0]?.ok === 1 }));
+    } catch (e) {
+      res.writeHead(500, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // Root: keep it non-blocking first, then show DB time as a bonus
+  try {
+    const r = await pool.query("SELECT NOW() as now");
+    res.writeHead(200, { "content-type": "text/plain" });
+    res.end(`Hello from Ecavo! CI/CD is LIVE!\nDatabase Time: ${r.rows[0].now}`);
+  } catch {
+    res.writeHead(200, { "content-type": "text/plain" });
+    res.end("Hello from Ecavo! CI/CD is LIVE!\nDB not ready yet. Check /dbcheck.");
+  }
 });
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on port ${PORT}`);
+});
+EOF
