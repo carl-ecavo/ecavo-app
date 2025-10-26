@@ -4,3 +4,6 @@ const server = http.createServer((req, res) => {
   res.end("Hello from Ecavo! CI/CD!\n");
 });
 server.listen(process.env.PORT || 8080);
+
+// server.js (Example change)
+console.log("Dev deploy test successful!");
