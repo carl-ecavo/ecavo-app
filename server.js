@@ -7,7 +7,9 @@ import { Client } from 'pg';
 // --- CONNECTION CONFIGURATION ---
 const DB_USER = 'ecavo_app'; 
 const DB_PASSWORD = process.env.DB_PASS; 
-const DB_NAME = 'postgres';
+// const DB_NAME = 'postgres';
+// Final Fix: Connect to the template database first to establish the socket connection.
+const DB_NAME = 'template1';
 
 // Cloud SQL Proxy maps the database to a local port. 
 // Set host to 127.0.0.1 and port to 5432 (default PostgreSQL port).
