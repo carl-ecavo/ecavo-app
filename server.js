@@ -12,15 +12,21 @@ const CLOUDSQL_SOCKET_PATH = `/cloudsql/totemic-chimera-476220-n3:europe-west1:e
 
 const PORT = process.env.PORT || 8080;
 
+// Final Test Configuration in server.js
+
 // 2. Configure the PostgreSQL client
 const client = new Client({
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
-  host: CLOUDSQL_SOCKET_PATH,
+  // Host must be the full Unix socket path for the pg client
+  host: `/cloudsql/totemic-chimera-476220-n3:europe-west1:ecavo-db-dev`,
   
-  // ADD THIS LINE
-  connectionTimeoutMillis: 5000, // Wait 5 seconds before giving up
+  // Use the default user and DB, which is 'postgres'
+  database: 'postgres',
+  user: 'postgres',
+  
+  // THIS MUST BE THE CORRECT PASSWORD FROM SECRET MANAGER VERSION 5
+  password: process.env.DB_PASS, 
+
+  connectionTimeoutMillis: 5000,
 });
 // --------------------------------
 
