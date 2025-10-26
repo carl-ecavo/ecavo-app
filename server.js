@@ -2,32 +2,32 @@ import http from "node:http";
 import { Client } from 'pg';
 
 // New client configuration in server.js
+// Final, definitive format for Cloud Run deployment
 
 // --- CONNECTION CONFIGURATION ---
-const DB_USER = 'postgres'; 
-const DB_PASSWORD = process.env.DB_PASS; // Secret Manager injection
+const DB_USER = 'ecavo_app'; 
+const DB_PASSWORD = process.env.DB_PASS; 
 const DB_NAME = 'postgres';
 
-// Use the full Instance Connection Name
-// const CLOUDSQL_CONNECTION_NAME = 'totemic-chimera-476220-n3:europe-west1:ecavo-db-dev';
-// This variable will be set by the 'gcloud run deploy' command for each environment.
-const CLOUDSQL_CONNECTION_NAME = process.env.DB_CONNECTION_NAME;
+// Cloud SQL Proxy maps the database to a local port. 
+// Set host to 127.0.0.1 and port to 5432 (default PostgreSQL port).
+const DB_HOST = '127.0.0.1'; // <-- Simple, reliable localhost binding
+const DB_PORT = 5432; 
 
-// Construct the URL using the Unix Socket Format explicitly.
-// Format: postgres://USER:PASSWORD@HOST:PORT/DATABASE?options
-const CONNECTION_URL = 
-  `postgres://${DB_USER}:${DB_PASSWORD}@/` +
-  `${DB_NAME}?host=/cloudsql/${CLOUDSQL_CONNECTION_NAME}`;
+// This variable MUST be set at deploy time for the proxy to know which instance to connect to.
+const CLOUDSQL_CONNECTION_NAME = process.env.DB_CONNECTION_NAME; 
 
 const PORT = process.env.PORT || 8080;
 
 // 2. Configure the PostgreSQL client
-// Pass the entire URL string to the Client constructor
 const client = new Client({
-  connectionString: CONNECTION_URL, // 🚨 FINAL FIX: Use the full connection string
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  host: DB_HOST, 
+  port: DB_PORT,
   connectionTimeoutMillis: 5000,
 });
-
 // --------------------------------
 
 // Connect to the database on startup (or implement robust connection pooling for production)
