@@ -1,0 +1,12 @@
+{
+  "name": "ecavo-app",
+  "version": "1.0.0",
+  "description": "A simple Node.js web app deployed to GCP Cloud Run.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}
