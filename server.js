@@ -1,33 +1,31 @@
 import http from "node:http";
 import { Client } from 'pg';
 
+// New client configuration in server.js
+
 // --- CONNECTION CONFIGURATION ---
 const DB_USER = 'postgres'; 
 const DB_PASSWORD = process.env.DB_PASS; // Secret Manager injection
 const DB_NAME = 'postgres';
 
-// The full Instance Connection Name is used as the socket file name
-// Format: /cloudsql/PROJECT_ID:REGION:INSTANCE_ID
-const CLOUDSQL_SOCKET_PATH = `/cloudsql/totemic-chimera-476220-n3:europe-west1:ecavo-db-dev`;
+// Use the full Instance Connection Name
+const CLOUDSQL_CONNECTION_NAME = 'totemic-chimera-476220-n3:europe-west1:ecavo-db-dev';
+
+// Construct the URL using the Unix Socket Format explicitly.
+// Format: postgres://USER:PASSWORD@HOST:PORT/DATABASE?options
+const CONNECTION_URL = 
+  `postgres://${DB_USER}:${DB_PASSWORD}@/` +
+  `${DB_NAME}?host=/cloudsql/${CLOUDSQL_CONNECTION_NAME}`;
 
 const PORT = process.env.PORT || 8080;
 
-// Final Test Configuration in server.js
-
 // 2. Configure the PostgreSQL client
+// Pass the entire URL string to the Client constructor
 const client = new Client({
-  // Host must be the full Unix socket path for the pg client
-  host: `/cloudsql/totemic-chimera-476220-n3:europe-west1:ecavo-db-dev`,
-  
-  // Use the default user and DB, which is 'postgres'
-  database: 'postgres',
-  user: 'postgres',
-  
-  // THIS MUST BE THE CORRECT PASSWORD FROM SECRET MANAGER VERSION 5
-  password: process.env.DB_PASS, 
-
+  connectionString: CONNECTION_URL, // 🚨 FINAL FIX: Use the full connection string
   connectionTimeoutMillis: 5000,
 });
+
 // --------------------------------
 
 // Connect to the database on startup (or implement robust connection pooling for production)
