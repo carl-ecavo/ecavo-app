@@ -9,7 +9,9 @@ const DB_PASSWORD = process.env.DB_PASS; // Secret Manager injection
 const DB_NAME = 'postgres';
 
 // Use the full Instance Connection Name
-const CLOUDSQL_CONNECTION_NAME = 'totemic-chimera-476220-n3:europe-west1:ecavo-db-dev';
+// const CLOUDSQL_CONNECTION_NAME = 'totemic-chimera-476220-n3:europe-west1:ecavo-db-dev';
+// This variable will be set by the 'gcloud run deploy' command for each environment.
+const CLOUDSQL_CONNECTION_NAME = process.env.DB_CONNECTION_NAME;
 
 // Construct the URL using the Unix Socket Format explicitly.
 // Format: postgres://USER:PASSWORD@HOST:PORT/DATABASE?options
