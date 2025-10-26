@@ -17,7 +17,10 @@ const client = new Client({
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
-  host: CLOUDSQL_SOCKET_PATH, // Directly specify the full Unix socket path
+  host: CLOUDSQL_SOCKET_PATH,
+  
+  // ADD THIS LINE
+  connectionTimeoutMillis: 5000, // Wait 5 seconds before giving up
 });
 // --------------------------------
 
